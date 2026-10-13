@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="checker-page">
+  <div class="checker-layout">
+    <!-- Left Column: Primary Evaluation Form & Checklist -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Live Password Strength Engine</h2>
+        <p class="card-subtitle">
+          Real-time Shannon entropy calculation, dictionary detection, and offline brute-force simulation.
+        </p>
+      </div>
+
+      <form id="checkerForm" class="form" onsubmit="return false;">
+        <div class="form-group">
+          <label for="checkerPasswordInput" class="form-label">Evaluate Password</label>
+          <div class="input-wrapper">
+            <input
+              type="password"
+              id="checkerPasswordInput"
+              class="form-input"
+              placeholder="Type password to inspect entropy..."
+              autocomplete="off"
+            />
+            <button
+              type="button"
+              id="checkerToggleVisibility"
+              class="password-toggle-btn"
+              aria-label="Toggle password visibility"
+            >
+              👁
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button type="button" id="btnCheckSubmit" class="btn btn-primary" style="flex: 1;">
+            <span>🛡️ Check & Save to History</span>
+          </button>
+          <button type="button" id="btnHibpCheck" class="btn btn-secondary">
+            <span>🌐 Check if Breached (HIBP)</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Animated Strength Meter -->
+      <div class="meter-container">
+        <div class="meter-labels">
+          <span id="meterScoreLabel" style="font-size: 0.95rem; color: var(--text-main);">Score: 0 / 100</span>
+          <span id="meterLevelBadge" class="badge badge-weak">PENDING</span>
+        </div>
+        <div class="meter-track">
+          <div id="meterFillBar" class="meter-fill weak" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <!-- Result Banner Message -->
+      <div id="resultBanner" class="guidance-box" style="margin-top: 14px; border-left: 4px solid var(--cyan);">
+        <h4 id="resultBannerTitle" style="font-size: 1rem; font-weight: 700; margin-bottom: 4px;">Waiting for input...</h4>
+        <p id="resultBannerMessage" style="font-size: 0.88rem; color: var(--text-muted); margin: 0;">
+          Type a password above to evaluate live strength. Click Check to save to history.
+        </p>
+      </div>
+
+      <!-- Five-Rule Checklist with Animated Icons -->
+      <div style="margin-top: 20px;">
+        <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">
+          Core Defense Checklist
+        </h4>
+        <div class="checklist-grid">
+          <div class="checklist-item" id="checkLength" data-rule="length">
+            <span>8+ Chars</span>
+            <span class="rule-icon">✕</span>
+          </div>
+          <div class="checklist-item" id="checkUppercase" data-rule="uppercase">
+            <span>Uppercase</span>
+            <span class="rule-icon">✕</span>
+          </div>
+          <div class="checklist-item" id="checkLowercase" data-rule="lowercase">
+            <span>Lowercase</span>
+            <span class="rule-icon">✕</span>
+          </div>
+          <div class="checklist-item" id="checkNumber" data-rule="number">
+            <span>Number</span>
+            <span class="rule-icon">✕</span>
+          </div>
+          <div class="checklist-item" id="checkSpecial" data-rule="special">
+            <span>Special Char</span>
+            <span class="rule-icon">✕</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Status Badges, Crack Time, Entropy & Dynamic Suggestions -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      <!-- Three Status Badges Card -->
+      <div class="card">
+        <h3 class="card-title" style="font-size: 1rem;">Credential Status Flags</h3>
+        <p class="card-subtitle" style="font-size: 0.8rem; margin-bottom: 12px;">
+          Distinct verification across global breach datasets and your personal account
+        </p>
+        
+        <div class="status-badges-row">
+          <div id="badgeCommon" class="status-badge-item" title="Present in top 10,000 common passwords or breaches">
+            <span>⚡ Common Password:</span>
+            <strong id="badgeCommonState">No</strong>
+          </div>
+          <div id="badgeReused" class="status-badge-item" title="Previously checked by this account">
+            <span>🔄 Already Used:</span>
+            <strong id="badgeReusedState">No</strong>
+          </div>
+          <div id="badgeAvailable" class="status-badge-item active-success" title="Neither common nor previously checked">
+            <span>✅ Available:</span>
+            <strong id="badgeAvailableState">Yes</strong>
+          </div>
+        </div>
+
+        <div id="hibpStatusAlert" style="display: none; margin-top: 10px; padding: 10px 14px; border-radius: var(--radius-md); font-size: 0.85rem;">
+          <!-- Populated dynamically upon HIBP button click -->
+        </div>
+      </div>
+
+      <!-- Computational Crack Time & Entropy Metrics -->
+      <div class="card">
+        <h3 class="card-title" style="font-size: 1rem;">Cryptographic Complexity</h3>
+        <div class="metrics-row">
+          <div class="metric-pill">
+            <div class="metric-pill-title">Estimated Crack Time</div>
+            <div id="metricCrackTime" class="metric-pill-value">Instant</div>
+            <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">Offline GPU Cluster (10¹⁰ h/s)</div>
+          </div>
+          <div class="metric-pill">
+            <div class="metric-pill-title">Shannon Entropy</div>
+            <div id="metricEntropy" class="metric-pill-value">0.0 bits</div>
+            <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">Minimum 60 bits recommended</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actionable Hardening Suggestions -->
+      <div class="card">
+        <h3 class="card-title" style="font-size: 1rem;">Security Recommendations</h3>
+        <div class="guidance-box" style="margin-top: 10px;">
+          <ul id="suggestionsList">
+            <li>Type a password to receive specific hardening suggestions.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/strength.js') }}"></script>
+<script src="{{ url_for('static', filename='js/checker.js') }}"></script>
+{% endblock %}

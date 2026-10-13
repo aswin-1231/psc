@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="assistant-page">
+  <div class="chat-container">
+    <!-- Chat Header -->
+    <div class="chat-header">
+      <div class="chat-assistant-info">
+        <div class="assistant-avatar">🤖</div>
+        <div>
+          <h2 style="font-size: 1.1rem; font-weight: 700; margin: 0;">PassGuard AI</h2>
+          <p style="font-size: 0.78rem; color: var(--color-strong); margin: 0;">● Active Cyber Security Consultant</p>
+        </div>
+      </div>
+      <button type="button" id="btnClearChat" class="btn btn-secondary btn-sm" aria-label="Clear chat conversation">
+        🗑️ Clear Chat
+      </button>
+    </div>
+
+    <!-- Message Feed -->
+    <div id="chatFeed" class="chat-feed" aria-live="polite">
+      <!-- Welcome Message from Assistant -->
+      <div class="chat-bubble assistant">
+        <strong>Hello! I am PassGuard AI</strong>, your cyber security consultant.<br /><br />
+        I can answer questions regarding:
+        <ul style="margin: 8px 0 0 18px;">
+          <li>Password entropy & modern hashing algorithms (Argon2, bcrypt)</li>
+          <li>Two-factor authentication (2FA / MFA / TOTP / FIDO2 keys)</li>
+          <li>Password managers & credential vaults</li>
+          <li>Breach notification triage & credential stuffing defense</li>
+        </ul>
+        <br />
+        <em>Note: Never send real credentials or plain-text passwords into this chat.</em>
+        <div class="chat-time">System</div>
+      </div>
+
+      <!-- Pre-rendered History -->
+      {% if chat_history %}
+        {% for msg in chat_history %}
+          <div class="chat-bubble {{ msg.role }}">
+            <div>{{ msg.content | replace('\n', '<br>') | safe }}</div>
+            <div class="chat-time">{{ msg.created_at }}</div>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <!-- Animated Typing Indicator (Hidden by default) -->
+      <div id="typingIndicator" class="typing-indicator" style="display: none;">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    </div>
+
+    <!-- Suggested Starter Question Chips -->
+    <div class="chips-container" aria-label="Starter questions">
+      <button type="button" class="chip-btn" data-question="How long should my password be?">
+        ❓ How long should my password be?
+      </button>
+      <button type="button" class="chip-btn" data-question="What is 2FA?">
+        🔑 What is 2FA?
+      </button>
+      <button type="button" class="chip-btn" data-question="Are password managers safe?">
+        🛡️ Are password managers safe?
+      </button>
+      <button type="button" class="chip-btn" data-question="How do I create passwords for work accounts?">
+        💼 How do I create passwords for work accounts?
+      </button>
+      <button type="button" class="chip-btn" data-question="What should I do if my password was leaked?">
+        🚨 What should I do if my password was leaked?
+      </button>
+    </div>
+
+    <!-- Chat Input Bar -->
+    <form id="chatForm" class="chat-input-bar" onsubmit="return false;">
+      <input
+        type="text"
+        id="chatInput"
+        class="form-input"
+        placeholder="Ask a security question... (Press Enter to send)"
+        autocomplete="off"
+        maxlength="500"
+      />
+      <button type="button" id="btnSendChat" class="btn btn-primary" aria-label="Send message">
+        <span>Send ➔</span>
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/assistant.js') }}"></script>
+{% endblock %}

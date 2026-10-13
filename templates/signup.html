@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block auth_content %}
+<div class="card auth-card" style="width: min(100%, 540px);">
+  <div class="auth-header">
+    <div class="auth-logo">
+      <div class="brand-icon" style="width: 52px; height: 52px; font-size: 1.7rem;">🛡️</div>
+    </div>
+    <h1 class="card-title" style="font-size: 1.6rem;">Create PassGuard Account</h1>
+    <p class="card-subtitle">Enforces high-entropy credentials for enterprise-grade security</p>
+  </div>
+
+  <form action="{{ url_for('auth.signup') }}" method="POST" id="signupForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+    <div class="form-group">
+      <label for="full_name" class="form-label">Full Name</label>
+      <input
+        type="text"
+        id="full_name"
+        name="full_name"
+        class="form-input"
+        placeholder="Alex Mercer"
+        value="{{ full_name | default('') }}"
+        required
+        autocomplete="name"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="email" class="form-label">Email Address</label>
+      <input
+        type="email"
+        id="email"
+        name="email"
+        class="form-input"
+        placeholder="alex@cyber.local"
+        value="{{ email | default('') }}"
+        required
+        autocomplete="email"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="password" class="form-label">Account Password</label>
+      <div class="input-wrapper">
+        <input
+          type="password"
+          id="password"
+          name="password"
+          class="form-input"
+          placeholder="Enter a strong password (12+ characters)"
+          required
+          autocomplete="new-password"
+        />
+        <button
+          type="button"
+          id="toggleSignupPassword"
+          class="password-toggle-btn"
+          aria-label="Toggle password visibility"
+        >
+          👁
+        </button>
+      </div>
+
+      <!-- Live Strength Meter -->
+      <div class="meter-container" style="margin: 12px 0 8px 0;">
+        <div class="meter-labels">
+          <span id="signupScoreText" style="font-size: 0.85rem; color: var(--text-muted);">Strength: 0 / 100</span>
+          <span id="signupLevelBadge" class="badge badge-weak">Weak</span>
+        </div>
+        <div class="meter-track" style="height: 6px;">
+          <div id="signupMeterFill" class="meter-fill weak" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <!-- 5-Rule Checklist -->
+      <div class="checklist-grid" style="grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; margin: 10px 0;">
+        <div class="checklist-item" id="ruleLength" data-rule="length">
+          <span>8+ Chars</span>
+          <span class="rule-icon">✕</span>
+        </div>
+        <div class="checklist-item" id="ruleUpper" data-rule="uppercase">
+          <span>Uppercase</span>
+          <span class="rule-icon">✕</span>
+        </div>
+        <div class="checklist-item" id="ruleLower" data-rule="lowercase">
+          <span>Lowercase</span>
+          <span class="rule-icon">✕</span>
+        </div>
+        <div class="checklist-item" id="ruleNumber" data-rule="number">
+          <span>Number</span>
+          <span class="rule-icon">✕</span>
+        </div>
+        <div class="checklist-item" id="ruleSpecial" data-rule="special">
+          <span>Special</span>
+          <span class="rule-icon">✕</span>
+        </div>
+      </div>
+      <p id="signupRequirementNote" style="font-size: 0.8rem; color: var(--color-medium); margin-top: 4px;">
+        ⚠️ Strong password required (Score &ge; 70).
+      </p>
+    </div>
+
+    <div class="form-group">
+      <label for="confirm_password" class="form-label">Confirm Password</label>
+      <div class="input-wrapper">
+        <input
+          type="password"
+          id="confirm_password"
+          name="confirm_password"
+          class="form-input"
+          placeholder="Repeat your password"
+          required
+          autocomplete="new-password"
+        />
+        <button
+          type="button"
+          id="toggleConfirmPassword"
+          class="password-toggle-btn"
+          aria-label="Toggle password visibility"
+        >
+          👁
+        </button>
+      </div>
+      <p id="confirmMatchError" style="display:none; color: var(--color-weak); font-size: 0.8rem; margin-top: 4px;">
+        Passwords do not match.
+      </p>
+    </div>
+
+    <button type="submit" id="signupSubmitBtn" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+      Register Secure Account
+    </button>
+  </form>
+
+  <div class="auth-footer">
+    <p>Already have an account? <a href="{{ url_for('auth.login') }}">Sign In</a></p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/strength.js') }}"></script>
+<script>
+  // Show / Hide password toggles
+  const setupToggle = (btnId, inputId) => {
+    const btn = document.getElementById(btnId);
+    const input = document.getElementById(inputId);
+    if (btn && input) {
+      btn.addEventListener('click', () => {
+        const isHidden = input.type === 'password';
+        input.type = isHidden ? 'text' : 'password';
+        btn.textContent = isHidden ? '🙈' : '👁';
+      });
+    }
+  };
+  setupToggle('toggleSignupPassword', 'password');
+  setupToggle('toggleConfirmPassword', 'confirm_password');
+
+  // Live strength validation for registration
+  const pwdInput = document.getElementById('password');
+  const confirmInput = document.getElementById('confirm_password');
+  const fill = document.getElementById('signupMeterFill');
+  const scoreText = document.getElementById('signupScoreText');
+  const levelBadge = document.getElementById('signupLevelBadge');
+  const matchError = document.getElementById('confirmMatchError');
+  const submitBtn = document.getElementById('signupSubmitBtn');
+
+  const ruleEls = {
+    length: document.getElementById('ruleLength'),
+    uppercase: document.getElementById('ruleUpper'),
+    lowercase: document.getElementById('ruleLower'),
+    number: document.getElementById('ruleNumber'),
+    special: document.getElementById('ruleSpecial')
+  };
+
+  let currentScore = 0;
+
+  function updateSignupMeter() {
+    const pwd = pwdInput.value;
+    const checks = window.PassGuardStrength.getCriteriaState(pwd);
+    const scoreData = window.PassGuardStrength.evaluateLiveScore(pwd);
+    currentScore = scoreData.score;
+
+    // Update rule checklist
+    for (const [key, el] of Object.entries(ruleEls)) {
+      if (el) {
+        const passed = checks[key];
+        el.classList.toggle('pass', passed);
+        el.classList.toggle('fail', !passed);
+        const icon = el.querySelector('.rule-icon');
+        if (icon) icon.textContent = passed ? '✓' : '✕';
+      }
+    }
+
+    // Update bar fill
+    fill.style.width = `${currentScore}%`;
+    fill.className = `meter-fill ${scoreData.level}`;
+    scoreText.textContent = `Strength: ${currentScore} / 100`;
+
+    levelBadge.textContent = scoreData.level.toUpperCase();
+    levelBadge.className = `badge badge-${scoreData.level}`;
+
+    // Verify confirm password match
+    if (confirmInput.value && confirmInput.value !== pwd) {
+      matchError.style.display = 'block';
+    } else {
+      matchError.style.display = 'none';
+    }
+  }
+
+  // Debounced live calculation (300ms)
+  const debouncedUpdate = window.PassGuardStrength.debounce(updateSignupMeter, 300);
+  pwdInput.addEventListener('input', debouncedUpdate);
+  confirmInput.addEventListener('input', () => {
+    if (confirmInput.value && confirmInput.value !== pwdInput.value) {
+      matchError.style.display = 'block';
+    } else {
+      matchError.style.display = 'none';
+    }
+  });
+
+  // Enforce strong gate before form submit
+  document.getElementById('signupForm').addEventListener('submit', (e) => {
+    if (currentScore < 70) {
+      e.preventDefault();
+      pwdInput.classList.add('invalid');
+      alert('Password must score at least 70/100 (Strong). Please add length, uppercase, numbers, or symbols.');
+      setTimeout(() => pwdInput.classList.remove('invalid'), 1000);
+    } else if (pwdInput.value !== confirmInput.value) {
+      e.preventDefault();
+      confirmInput.classList.add('invalid');
+      matchError.style.display = 'block';
+      setTimeout(() => confirmInput.classList.remove('invalid'), 1000);
+    }
+  });
+</script>
+{% endblock %}

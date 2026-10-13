@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-page">
+  <!-- Quick Check Action Banner -->
+  <div class="card" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%);">
+    <div>
+      <h2 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 4px;">Security Audit Hub</h2>
+      <p style="color: var(--text-muted); font-size: 0.92rem;">Evaluate password entropy, check breach history, and inspect reuse tokens.</p>
+    </div>
+    <a href="{{ url_for('checker.checker_view') }}" class="btn btn-primary" id="quickCheckBtn">
+      <span>🔍 Launch Checker</span>
+    </a>
+  </div>
+
+  <!-- Animated Stat Cards Grid -->
+  <div class="stats-grid">
+    <!-- Total Checked -->
+    <div class="card stat-card">
+      <div class="stat-header">
+        <span class="stat-label">Total Checked</span>
+        <span class="stat-icon">📊</span>
+      </div>
+      <div class="stat-value" id="statTotal" data-target="0">0</div>
+      <div class="stat-subtext"><span id="statGlobalTotal">0</span> global checks across system</div>
+    </div>
+
+    <!-- Strong -->
+    <div class="card stat-card stat-strong">
+      <div class="stat-header">
+        <span class="stat-label">Strong (70-100)</span>
+        <span class="stat-icon" style="color: var(--color-strong);">🛡️</span>
+      </div>
+      <div class="stat-value" id="statStrong" data-target="0" style="color: var(--color-strong);">0</div>
+      <div class="stat-subtext"><span id="statGlobalStrong">0</span> global strong passwords</div>
+    </div>
+
+    <!-- Medium -->
+    <div class="card stat-card stat-medium">
+      <div class="stat-header">
+        <span class="stat-label">Medium (40-69)</span>
+        <span class="stat-icon" style="color: var(--color-medium);">⚠️</span>
+      </div>
+      <div class="stat-value" id="statMedium" data-target="0" style="color: var(--color-medium);">0</div>
+      <div class="stat-subtext"><span id="statGlobalMedium">0</span> global medium passwords</div>
+    </div>
+
+    <!-- Weak -->
+    <div class="card stat-card stat-weak">
+      <div class="stat-header">
+        <span class="stat-label">Weak (0-39)</span>
+        <span class="stat-icon" style="color: var(--color-weak);">🚨</span>
+      </div>
+      <div class="stat-value" id="statWeak" data-target="0" style="color: var(--color-weak);">0</div>
+      <div class="stat-subtext"><span id="statGlobalWeak">0</span> global weak passwords</div>
+    </div>
+
+    <!-- Breached or Common -->
+    <div class="card stat-card stat-breached">
+      <div class="stat-header">
+        <span class="stat-label">Breached / Common</span>
+        <span class="stat-icon" style="color: #f43f5e;">⚡</span>
+      </div>
+      <div class="stat-value" id="statCommon" data-target="0" style="color: #f43f5e;">0</div>
+      <div class="stat-subtext"><span id="statGlobalCommon">0</span> global compromised matches</div>
+    </div>
+
+    <!-- Reused -->
+    <div class="card stat-card stat-reused">
+      <div class="stat-header">
+        <span class="stat-label">Reused Tokens</span>
+        <span class="stat-icon" style="color: #a855f7;">🔄</span>
+      </div>
+      <div class="stat-value" id="statReused" data-target="0" style="color: #a855f7;">0</div>
+      <div class="stat-subtext"><span id="statGlobalReused">0</span> global reused instances</div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="charts-grid">
+    <!-- Timeline Line Chart -->
+    <div class="card">
+      <div class="chart-header">
+        <div>
+          <h3 class="card-title">Password Audit Frequency</h3>
+          <p class="card-subtitle">Activity trend over time</p>
+        </div>
+        <div class="chart-toggles">
+          <button type="button" class="chart-toggle-btn active" id="btnRange7d" data-range="7d">7 Days</button>
+          <button type="button" class="chart-toggle-btn" id="btnRange30d" data-range="30d">30 Days</button>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="timelineChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Doughnut Distribution Chart -->
+    <div class="card">
+      <div class="chart-header">
+        <div>
+          <h3 class="card-title">Strength Breakdown</h3>
+          <p class="card-subtitle">Quality ratio of evaluated credentials</p>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="distributionChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activity Table (Last 10 Checks) -->
+  <div class="card">
+    <div class="chart-header">
+      <div>
+        <h3 class="card-title">Recent Activity History</h3>
+        <p class="card-subtitle">Last 10 password evaluations (sanitized masked previews only)</p>
+      </div>
+      <a href="{{ url_for('passwords.passwords_view') }}" class="btn btn-secondary btn-sm">
+        View All History ➔
+      </a>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="cyber-table" id="recentActivityTable">
+        <thead>
+          <tr>
+            <th>Date & Time</th>
+            <th>Masked Preview</th>
+            <th>Length</th>
+            <th>Score</th>
+            <th>Strength Level</th>
+            <th>Status Flags</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if recent_checks %}
+            {% for item in recent_checks %}
+            <tr>
+              <td class="mono" style="color: var(--text-dim); font-size: 0.85rem;">
+                {{ item.checked_at.strftime('%Y-%m-%d %H:%M') if item.checked_at else 'N/A' }}
+              </td>
+              <td>
+                <span class="mono" style="font-weight: 700; color: var(--cyan); letter-spacing: 0.05em;">
+                  {{ item.masked_preview }}
+                </span>
+              </td>
+              <td>{{ item.length }} chars</td>
+              <td style="font-weight: 700;">{{ item.score }} / 100</td>
+              <td>
+                <span class="badge badge-{{ item.level }}">{{ item.level | upper }}</span>
+              </td>
+              <td>
+                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                  {% if item.common_flag %}
+                    <span class="badge badge-pill-alert" title="Found in top 10,000 common passwords">COMMON</span>
+                  {% endif %}
+                  {% if item.breached_flag %}
+                    <span class="badge badge-pill-alert" title="Exposed in data breach">BREACHED</span>
+                  {% endif %}
+                  {% if item.reused_flag %}
+                    <span class="badge badge-medium" title="Previously evaluated by this account">REUSED</span>
+                  {% endif %}
+                  {% if not item.common_flag and not item.reused_flag and not item.breached_flag %}
+                    <span class="badge badge-strong">AVAILABLE</span>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-dim); padding: 32px;">
+                No password checks recorded yet. <a href="{{ url_for('checker.checker_view') }}" style="color: var(--cyan);">Check your first password</a>.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

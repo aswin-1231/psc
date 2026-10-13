@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block auth_content %}
+<div class="card auth-card">
+  <div class="auth-header">
+    <div class="auth-logo">
+      <div class="brand-icon" style="width: 52px; height: 52px; font-size: 1.7rem;">🛡️</div>
+    </div>
+    <h1 class="card-title" style="font-size: 1.6rem;">Sign In to PassGuard</h1>
+    <p class="card-subtitle">Enter your credentials to access your security console</p>
+  </div>
+
+  <form action="{{ url_for('auth.login') }}" method="POST" id="loginForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+    <div class="form-group">
+      <label for="email" class="form-label">Email Address</label>
+      <input
+        type="email"
+        id="email"
+        name="email"
+        class="form-input"
+        placeholder="alex@cyber.local"
+        value="{{ email | default('') }}"
+        required
+        autocomplete="username"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="password" class="form-label">Password</label>
+      <div class="input-wrapper">
+        <input
+          type="password"
+          id="password"
+          name="password"
+          class="form-input"
+          placeholder="••••••••••••••••"
+          required
+          autocomplete="current-password"
+        />
+        <button
+          type="button"
+          id="togglePasswordBtn"
+          class="password-toggle-btn"
+          aria-label="Toggle password visibility"
+        >
+          👁
+        </button>
+      </div>
+    </div>
+
+    <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+      <label class="checkbox-label" for="remember">
+        <input type="checkbox" id="remember" name="remember" />
+        <span>Remember this device</span>
+      </label>
+    </div>
+
+    <button type="submit" id="loginSubmitBtn" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+      Authenticate & Sign In
+    </button>
+  </form>
+
+  <div class="auth-footer">
+    <p>Don't have an account yet? <a href="{{ url_for('auth.signup') }}">Create Account</a></p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Show / Hide password toggle
+  const toggleBtn = document.getElementById('togglePasswordBtn');
+  const pwdInput = document.getElementById('password');
+
+  if (toggleBtn && pwdInput) {
+    toggleBtn.addEventListener('click', () => {
+      const isHidden = pwdInput.type === 'password';
+      pwdInput.type = isHidden ? 'text' : 'password';
+      toggleBtn.textContent = isHidden ? '🙈' : '👁';
+    });
+  }
+</script>
+{% endblock %}
