@@ -1,4 +1,4 @@
-# PassGuard — Cyber Security Password Suite
+# PassGuard — Cyber Security Password Suite -project
 
 PassGuard is an enterprise-grade cyber security web application for evaluating password entropy, enforcing resilient authentication policies, discovering credential breach exposure via k-anonymity, detecting credential reuse in zero-knowledge, and consulting an AI cyber security assistant.
 
